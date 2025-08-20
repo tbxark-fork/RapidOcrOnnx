@@ -25,45 +25,22 @@ typedef char OCR_BOOL;
 #define FALSE 0
 
 typedef struct __ocr_param {
-    int padding;
-    int maxSideLen;
+    int32_t padding;
+    int32_t maxSideLen;
     float boxScoreThresh;
     float boxThresh;
     float unClipRatio;
-    int doAngle; // 1 means do
-    int mostAngle; // 1 means true
+    int32_t doAngle; // 1 means do
+    int32_t mostAngle; // 1 means true
 } OCR_PARAM;
+
 typedef struct {
-    double x;
-    double y;
-} OCR_POINT;
-typedef struct {
-    uint8_t *data;
-    int type;
-    int channels;
-    int width;
-    int height;
-    long dataLength;
-} OCR_INPUT;
-typedef struct {
-    OCR_POINT* boxPoint;
-    float boxScore;
-    int angleIndex;
-    float angleScore;
-    double angleTime;
     uint8_t *text;
-    float *charScores;
-    unsigned long long charScoresLength;
-    unsigned long long boxPointLength;
-    unsigned long long textLength;
-    double crnnTime;
-    double blockTime;
 } TEXT_BLOCK;
+
 typedef struct {
-    double dbNetTime;
     TEXT_BLOCK *textBlocks;
-    unsigned long long textBlocksLength;
-    double detectTime;
+    uint64_t textBlocksLength;
 } OCR_RESULT;
 
 /*
@@ -76,14 +53,9 @@ _QM_OCR_API OCR_BOOL
 OcrDetect(OCR_HANDLE handle, const char *imgPath, const char *imgName, OCR_PARAM *pParam, OCR_RESULT *ocrResult);
 
 _QM_OCR_API OCR_BOOL
-OcrDetectInput(OCR_HANDLE handle, OCR_INPUT *input, OCR_PARAM *pParam, OCR_RESULT *ocrResult);
-
-_QM_OCR_API OCR_BOOL
 OcrFreeResult(OCR_RESULT *result);
 
 _QM_OCR_API int OcrGetLen(OCR_HANDLE handle);
-
-_QM_OCR_API OCR_BOOL OcrGetResult(OCR_HANDLE handle, char *szBuf, int nLen);
 
 _QM_OCR_API void OcrDestroy(OCR_HANDLE handle);
 
