@@ -10,6 +10,69 @@ typedef struct {
     std::string strRes;
 } OCR_OBJ;
 
+// Internal helpers
+_QM_OCR_API void 
+SetDefaultOCRParam(OCR_PARAM &Param) {
+    if (Param.padding == 0) Param.padding = 50;
+    if (Param.maxSideLen == 0) Param.maxSideLen = 1024;
+    if (Param.boxScoreThresh == 0) Param.boxScoreThresh = 0.6f;
+    if (Param.boxThresh == 0) Param.boxThresh = 0.3f;
+    if (Param.unClipRatio == 0) Param.unClipRatio = 2.0f;
+    if (Param.doAngle == 0) Param.doAngle = 1;
+    if (Param.mostAngle == 0) Param.mostAngle = 1;
+}
+
+_QM_OCR_API OCR_BOOL
+FillOCRResult(const OcrResult &result, OCR_RESULT *ocrResult) {
+    if (!ocrResult) return FALSE;
+    if (result.strRes.length() == 0) return FALSE;
+
+    ocrResult->dbNetTime = result.dbNetTime;
+    ocrResult->detectTime = result.detectTime;
+    ocrResult->textBlocksLength = result.textBlocks.size();
+
+    size_t count = result.textBlocks.size();
+    auto *rawArray = static_cast<TEXT_BLOCK*>(calloc(count, sizeof(TEXT_BLOCK)));
+    if (!rawArray && count > 0) return FALSE;
+
+    for (size_t i = 0; i < count; i++) {
+        const TextBlock &textBlock = result.textBlocks[i];
+        rawArray[i].boxScore = textBlock.boxScore;
+        rawArray[i].angleIndex = textBlock.angleIndex;
+        rawArray[i].angleScore = textBlock.angleScore;
+        rawArray[i].angleTime = textBlock.angleTime;
+
+        auto *charScore = static_cast<float*>(calloc(textBlock.charScores.size(), sizeof(float)));
+        if (charScore && !textBlock.charScores.empty()) {
+            std::copy(textBlock.charScores.begin(), textBlock.charScores.end(), charScore);
+        }
+        rawArray[i].charScores = charScore;
+        rawArray[i].charScoresLength = textBlock.charScores.size();
+
+        auto *boxPoint = static_cast<OCR_POINT*>(calloc(textBlock.boxPoint.size(), sizeof(OCR_POINT)));
+        if (boxPoint) {
+            for (size_t boxPointIdx = 0; boxPointIdx < textBlock.boxPoint.size(); boxPointIdx++) {
+                boxPoint[boxPointIdx].x = textBlock.boxPoint[boxPointIdx].x;
+                boxPoint[boxPointIdx].y = textBlock.boxPoint[boxPointIdx].y;
+            }
+        }
+        rawArray[i].boxPoint = boxPoint;
+        rawArray[i].boxPointLength = textBlock.boxPoint.size();
+
+        auto *text = static_cast<uint8_t*>(calloc(textBlock.text.size(), sizeof(uint8_t)));
+        if (text && !textBlock.text.empty()) {
+            std::copy(textBlock.text.begin(), textBlock.text.end(), text);
+        }
+        rawArray[i].text = text;
+        rawArray[i].textLength = textBlock.text.size() + 1;
+        rawArray[i].crnnTime = textBlock.crnnTime;
+        rawArray[i].blockTime = textBlock.blockTime;
+    }
+
+    ocrResult->textBlocks = rawArray;
+    return TRUE;
+}
+
 _QM_OCR_API OCR_HANDLE
 OcrInit(const char *szDetModel, const char *szClsModel, const char *szRecModel, const char *szKeyPath, int nThreads) {
 
@@ -27,40 +90,20 @@ OcrInit(const char *szDetModel, const char *szClsModel, const char *szRecModel, 
 }
 
 _QM_OCR_API OCR_BOOL
-OcrDetect(OCR_HANDLE handle, const char *imgPath, const char *imgName, OCR_PARAM *pParam) {
+OcrDetect(OCR_HANDLE handle, const char *imgPath, const char *imgName, OCR_PARAM *pParam, OCR_RESULT *ocrResult) {
 
     OCR_OBJ *pOcrObj = (OCR_OBJ *) handle;
     if (!pOcrObj)
         return FALSE;
 
     OCR_PARAM Param = *pParam;
-    if (Param.padding == 0)
-        Param.padding = 50;
-
-    if (Param.maxSideLen == 0)
-        Param.maxSideLen = 1024;
-
-    if (Param.boxScoreThresh == 0)
-        Param.boxScoreThresh = 0.6;
-
-    if (Param.boxThresh == 0)
-        Param.boxThresh = 0.3f;
-
-    if (Param.unClipRatio == 0)
-        Param.unClipRatio = 2.0;
-
-    if (Param.doAngle == 0)
-        Param.doAngle = 1;
-
-    if (Param.mostAngle == 0)
-        Param.mostAngle = 1;
+    SetDefaultOCRParam(Param);
 
     OcrResult result = pOcrObj->OcrObj.detect(imgPath, imgName, Param.padding, Param.maxSideLen,
                                               Param.boxScoreThresh, Param.boxThresh, Param.unClipRatio,
                                               Param.doAngle != 0, Param.mostAngle != 0);
     if (result.strRes.length() > 0) {
-        pOcrObj->strRes = result.strRes;
-        return TRUE;
+        return FillOCRResult(result, ocrResult);
     } else
         return FALSE;
 }
@@ -73,26 +116,7 @@ OcrDetectInput(OCR_HANDLE handle, OCR_INPUT *input, OCR_PARAM *pParam, OCR_RESUL
         return FALSE;
 
     OCR_PARAM Param = *pParam;
-    if (Param.padding == 0)
-        Param.padding = 50;
-
-    if (Param.maxSideLen == 0)
-        Param.maxSideLen = 1024;
-
-    if (Param.boxScoreThresh == 0)
-        Param.boxScoreThresh = 0.6;
-
-    if (Param.boxThresh == 0)
-        Param.boxThresh = 0.3f;
-
-    if (Param.unClipRatio == 0)
-        Param.unClipRatio = 2.0;
-
-    if (Param.doAngle == 0)
-        Param.doAngle = 1;
-
-    if (Param.mostAngle == 0)
-        Param.mostAngle = 1;
+    SetDefaultOCRParam(Param);
     OcrResult result;
     if(input->dataLength == 0) {
         return FALSE;
@@ -113,44 +137,7 @@ OcrDetectInput(OCR_HANDLE handle, OCR_INPUT *input, OCR_PARAM *pParam, OCR_RESUL
                                                  Param.doAngle != 0, Param.mostAngle != 0);
     }
 
-    if (result.strRes.length() > 0) {
-        ocrResult->dbNetTime = result.dbNetTime;
-        ocrResult->detectTime = result.detectTime;
-        ocrResult->textBlocksLength = result.textBlocks.size();
-        // 计算所需内存大小
-        size_t count = result.textBlocks.size();
-
-       // 分配足够大的内存块
-        auto *rawArray = static_cast<TEXT_BLOCK*>(calloc(count, sizeof(TEXT_BLOCK)));
-        for (size_t i = 0; i < count; i++) {
-            TextBlock textBlock = result.textBlocks[i];
-
-            rawArray[i].boxScore = textBlock.boxScore;
-            rawArray[i].angleIndex = textBlock.angleIndex;
-            rawArray[i].angleScore = textBlock.angleScore;
-            rawArray[i].angleTime = textBlock.angleTime;
-            auto* charScore = static_cast<float*>(calloc(textBlock.charScores.size(), sizeof(float)));
-            std::copy(textBlock.charScores.begin(), textBlock.charScores.end(), charScore);
-            rawArray[i].charScores = charScore;
-            rawArray[i].charScoresLength = textBlock.charScores.size();
-            auto * boxPoint= static_cast<OCR_POINT*>(calloc(textBlock.boxPoint.size(), sizeof (OCR_POINT)));
-            for(size_t boxPointIdx = 0; boxPointIdx < textBlock.boxPoint.size(); boxPointIdx++){
-                boxPoint[boxPointIdx].x = textBlock.boxPoint[boxPointIdx].x;
-                boxPoint[boxPointIdx].y = textBlock.boxPoint[boxPointIdx].y;
-            }
-            rawArray[i].boxPoint = boxPoint;
-            rawArray[i].boxPointLength = textBlock.boxPoint.size();
-            auto* text = static_cast<uint8_t*>(calloc(textBlock.text.size(), sizeof (uint8_t)));
-            std::copy(textBlock.text.begin(), textBlock.text.end(), text);
-            rawArray[i].text = text;
-            rawArray[i].textLength = textBlock.text.size() + 1;
-            rawArray[i].crnnTime = textBlock.crnnTime;
-            rawArray[i].blockTime = textBlock.blockTime;
-        }
-        ocrResult->textBlocks = rawArray;
-        return TRUE;
-    } else
-        return FALSE;
+    return FillOCRResult(result, ocrResult);
 }
 
 _QM_OCR_API OCR_BOOL

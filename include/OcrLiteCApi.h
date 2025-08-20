@@ -73,7 +73,7 @@ _QM_OCR_API OCR_HANDLE
 OcrInit(const char *szDetModel, const char *szClsModel, const char *szRecModel, const char *szKeyPath, int nThreads);
 
 _QM_OCR_API OCR_BOOL
-OcrDetect(OCR_HANDLE handle, const char *imgPath, const char *imgName, OCR_PARAM *pParam);
+OcrDetect(OCR_HANDLE handle, const char *imgPath, const char *imgName, OCR_PARAM *pParam, OCR_RESULT *ocrResult);
 
 _QM_OCR_API OCR_BOOL
 OcrDetectInput(OCR_HANDLE handle, OCR_INPUT *input, OCR_PARAM *pParam, OCR_RESULT *ocrResult);
