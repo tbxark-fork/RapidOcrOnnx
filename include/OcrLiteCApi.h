@@ -42,7 +42,8 @@ OcrDetect(
     float boxThresh,
     float unClipRatio,
     int32_t doAngle,
-    int32_t mostAngle
+    int32_t mostAngle,
+	int32_t jsonDepth
 );
 
 _QM_OCR_API void OcrDestroy(OCR_HANDLE handle);

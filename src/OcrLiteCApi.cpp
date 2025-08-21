@@ -33,7 +33,9 @@ OcrDetect(
     float boxThresh,
     float unClipRatio,
     int32_t doAngle,
-    int32_t mostAngle) {
+    int32_t mostAngle,
+	int32_t jsonDepth
+) {
 
     OCR_OBJ *pOcrObj = (OCR_OBJ *)handle;
     if (!pOcrObj) return nullptr;
@@ -62,28 +64,32 @@ OcrDetect(
     j["dbNetTime"] = result.dbNetTime;
     j["detectTime"] = result.detectTime;
     j["strRes"] = result.strRes;
-
-    json jBlocks = json::array();
-    for (const auto &tb : result.textBlocks) {
-        json jBlock;
-        // box points as [[x,y], ...]
-        json pts = json::array();
-        for (const auto &pt : tb.boxPoint) {
-            pts.push_back({pt.x, pt.y});
+    if (jsonDepth > 0) {
+		json jBlocks = json::array();
+        for (const auto &tb : result.textBlocks) {
+            json jBlock;
+            jBlock["text"] = tb.text;
+            if (jsonDepth > 1) {
+                // box points as [[x,y], ...]
+                json pts = json::array();
+                for (const auto &pt : tb.boxPoint) {
+                    pts.push_back({pt.x, pt.y});
+                }
+                jBlock["boxPoint"] = pts;
+                if (jsonDepth > 2) {
+                    jBlock["boxScore"] = tb.boxScore;
+                    jBlock["angleIndex"] = tb.angleIndex;
+                    jBlock["angleScore"] = tb.angleScore;
+                    jBlock["angleTime"] = tb.angleTime;
+                    jBlock["charScores"] = tb.charScores;
+                    jBlock["crnnTime"] = tb.crnnTime;
+                    jBlock["blockTime"] = tb.blockTime;
+                }
+            }
+            jBlocks.push_back(jBlock);
         }
-        jBlock["boxPoint"] = pts;
-        jBlock["boxScore"] = tb.boxScore;
-        jBlock["angleIndex"] = tb.angleIndex;
-        jBlock["angleScore"] = tb.angleScore;
-        jBlock["angleTime"] = tb.angleTime;
-        jBlock["text"] = tb.text;
-        jBlock["charScores"] = tb.charScores;
-        jBlock["crnnTime"] = tb.crnnTime;
-        jBlock["blockTime"] = tb.blockTime;
-        jBlocks.push_back(jBlock);
-    }
-    j["textBlocks"] = jBlocks;
-
+        j["textBlocks"] = jBlocks;
+	}
     std::string s = j.dump();
     // Allocate C string for return; caller frees with FreeString
     char *ret = (char *)malloc(s.size() + 1);
