@@ -15,11 +15,13 @@ docker run --rm -v "${PWD}":/io ${IMAGE} bash -lc '
   # ensure cmake command available
   if ! command -v cmake >/dev/null 2>&1 && command -v cmake3 >/dev/null 2>&1; then ln -sf /usr/bin/cmake3 /usr/bin/cmake; fi
   cmake --version
-  cmake -S /io -B /io/build -DCMAKE_BUILD_TYPE=Release && \
-  cmake --build /io/build -j"$(nproc)" && \
-  cmake --install /io/build --prefix /io/build/install && \
+
+  # change to source dir and build using build.sh
+  cd /io
+  bash build.sh
+
   echo "==== ldd of installed lib ====" && \
-  ldd /io/build/install/lib/libRapidOcrOnnx.so || true
+  ldd build/install/lib/libRapidOcrOnnx.so || true
 '
 
 echo "Done. Artifacts in build/install."
