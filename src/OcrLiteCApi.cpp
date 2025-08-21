@@ -38,6 +38,14 @@ OcrDetect(
     OCR_OBJ *pOcrObj = (OCR_OBJ *)handle;
     if (!pOcrObj) return nullptr;
 
+    if (padding == 0) padding = 50;
+    if (maxSideLen == 0) maxSideLen = 1024;
+    if (boxScoreThresh == 0) boxScoreThresh = 0.6f;
+    if (boxThresh == 0) boxThresh = 0.3f;
+    if (unClipRatio == 0) unClipRatio = 2.0f;
+    if (doAngle == 0) doAngle = 1;
+    if (mostAngle == 0) mostAngle = 1;
+
     OcrResult result = pOcrObj->OcrObj.detect(
         imgPath,
         imgName,

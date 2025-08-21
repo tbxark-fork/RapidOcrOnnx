@@ -25,10 +25,6 @@ typedef char *OCR_STRING;
 #define TRUE 1
 #define FALSE 0
 
-typedef struct __ocr_param {
-
-} OCR_PARAM;
-
 /*
 By default, nThreads should be the number of threads
 */
@@ -42,16 +38,16 @@ OcrDetect(
     const char *imgName,
     int32_t padding,
     int32_t maxSideLen,
-    float boxScoreThresh;
+    float boxScoreThresh,
     float boxThresh,
     float unClipRatio,
     int32_t doAngle,
-    int32_t mostAngle,
+    int32_t mostAngle
 );
 
 _QM_OCR_API void OcrDestroy(OCR_HANDLE handle);
 
-__QM_OCR_API void FreeString(OCR_STRING str);
+_QM_OCR_API void FreeString(OCR_STRING str);
 
 };
 #endif //__OCR_LITE_C_API_H__
