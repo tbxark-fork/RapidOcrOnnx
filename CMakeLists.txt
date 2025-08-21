@@ -91,6 +91,15 @@ elseif (OCR_OUTPUT STREQUAL "BIN") # BIN
     target_link_libraries(RapidOcrOnnx ${OnnxRuntime_LIBS} ${OpenCV_LIBS})
 endif ()
 
+# Linux portability: static libstdc++/libgcc, conservative arch, and $ORIGIN RPATH
+if (UNIX AND NOT APPLE)
+    if (TARGET RapidOcrOnnx)
+        target_link_options(RapidOcrOnnx PRIVATE -static-libstdc++ -static-libgcc)
+        target_compile_options(RapidOcrOnnx PRIVATE -march=x86-64 -mtune=generic)
+        set_target_properties(RapidOcrOnnx PROPERTIES INSTALL_RPATH "$ORIGIN" BUILD_WITH_INSTALL_RPATH ON)
+    endif ()
+endif ()
+
 install(TARGETS RapidOcrOnnx EXPORT RapidOcrOnnx)
 if (OCR_OUTPUT STREQUAL "CLIB") # CLIB
     file(GLOB OCR_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
@@ -116,6 +125,11 @@ if (OCR_BENCHMARK AND (OCR_OUTPUT STREQUAL "BIN"))
             src/OcrUtils.cpp)
     target_link_libraries(benchmark ${OnnxRuntime_LIBS} ${OpenCV_LIBS})
     target_compile_definitions(benchmark PRIVATE __EXEC__)
+    if (UNIX AND NOT APPLE)
+        target_link_options(benchmark PRIVATE -static-libstdc++ -static-libgcc)
+        target_compile_options(benchmark PRIVATE -march=x86-64 -mtune=generic)
+        set_target_properties(benchmark PROPERTIES INSTALL_RPATH "$ORIGIN" BUILD_WITH_INSTALL_RPATH ON)
+    endif ()
 
     if (OCR_ONNX STREQUAL "CUDA")
         target_compile_definitions(benchmark PRIVATE __CUDA__)
