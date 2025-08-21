@@ -2,110 +2,95 @@
 
 #include "OcrLiteCApi.h"
 #include "OcrLiteImpl.h"
+#include "json.hpp"
 
-extern "C"
-{
+using json = nlohmann::json;
+
+extern "C" {
+
 typedef struct {
     OcrLiteImpl OcrObj;
-    std::string strRes;
 } OCR_OBJ;
-
-// Internal helpers
-_QM_OCR_API void 
-SetDefaultOCRParam(OCR_PARAM &Param) {
-    if (Param.padding == 0) Param.padding = 50;
-    if (Param.maxSideLen == 0) Param.maxSideLen = 1024;
-    if (Param.boxScoreThresh == 0) Param.boxScoreThresh = 0.6f;
-    if (Param.boxThresh == 0) Param.boxThresh = 0.3f;
-    if (Param.unClipRatio == 0) Param.unClipRatio = 2.0f;
-    if (Param.doAngle == 0) Param.doAngle = 1;
-    if (Param.mostAngle == 0) Param.mostAngle = 1;
-}
-
-_QM_OCR_API OCR_BOOL
-FillOCRResult(const OcrResult &result, OCR_RESULT *ocrResult) {
-    if (!ocrResult) return FALSE;
-    if (result.strRes.length() == 0) return FALSE;
-
-    ocrResult->textBlocksLength = result.textBlocks.size();
-
-    size_t count = result.textBlocks.size();
-    auto *rawArray = static_cast<TEXT_BLOCK*>(calloc(count, sizeof(TEXT_BLOCK)));
-    if (!rawArray && count > 0) return FALSE;
-
-    for (size_t i = 0; i < count; i++) {
-        const TextBlock &textBlock = result.textBlocks[i];
-        // Allocate C-string for text and null-terminate
-        auto *text = static_cast<uint8_t *>(calloc(textBlock.text.size() + 1, sizeof(uint8_t)));
-        if (text && !textBlock.text.empty()) {
-            std::copy(textBlock.text.begin(), textBlock.text.end(), text);
-            text[textBlock.text.size()] = '\0';
-        }
-        rawArray[i].text = text;
-    }
-
-    ocrResult->textBlocks = rawArray;
-    return TRUE;
-}
 
 _QM_OCR_API OCR_HANDLE
 OcrInit(const char *szDetModel, const char *szClsModel, const char *szRecModel, const char *szKeyPath, int nThreads) {
-
     OCR_OBJ *pOcrObj = new OCR_OBJ;
-    if (pOcrObj) {
-        pOcrObj->OcrObj.setNumThread(nThreads);
-
-        pOcrObj->OcrObj.initModels(szDetModel, szClsModel, szRecModel, szKeyPath);
-
-        return pOcrObj;
-    } else {
-        return nullptr;
-    }
-
+    if (!pOcrObj) return nullptr;
+    pOcrObj->OcrObj.setNumThread(nThreads);
+    pOcrObj->OcrObj.initModels(szDetModel, szClsModel, szRecModel, szKeyPath);
+    return pOcrObj;
 }
 
-_QM_OCR_API OCR_BOOL
-OcrDetect(OCR_HANDLE handle, const char *imgPath, const char *imgName, OCR_PARAM *pParam, OCR_RESULT *ocrResult) {
+// Return a newly allocated JSON string; caller must FreeString
+_QM_OCR_API OCR_STRING
+OcrDetect(
+    OCR_HANDLE handle,
+    const char *imgPath,
+    const char *imgName,
+    int32_t padding,
+    int32_t maxSideLen,
+    float boxScoreThresh,
+    float boxThresh,
+    float unClipRatio,
+    int32_t doAngle,
+    int32_t mostAngle) {
 
-    OCR_OBJ *pOcrObj = (OCR_OBJ *) handle;
-    if (!pOcrObj)
-        return FALSE;
+    OCR_OBJ *pOcrObj = (OCR_OBJ *)handle;
+    if (!pOcrObj) return nullptr;
 
-    OCR_PARAM Param = *pParam;
-    SetDefaultOCRParam(Param);
+    OcrResult result = pOcrObj->OcrObj.detect(
+        imgPath,
+        imgName,
+        padding,
+        maxSideLen,
+        boxScoreThresh,
+        boxThresh,
+        unClipRatio,
+        doAngle != 0,
+        mostAngle != 0);
 
-    OcrResult result = pOcrObj->OcrObj.detect(imgPath, imgName, Param.padding, Param.maxSideLen,
-                                              Param.boxScoreThresh, Param.boxThresh, Param.unClipRatio,
-                                              Param.doAngle != 0, Param.mostAngle != 0);
-    if (result.strRes.length() > 0) {
-        return FillOCRResult(result, ocrResult);
-    } else
-        return FALSE;
-}
+    // Build JSON
+    json j;
+    j["dbNetTime"] = result.dbNetTime;
+    j["detectTime"] = result.detectTime;
+    j["strRes"] = result.strRes;
 
-_QM_OCR_API OCR_BOOL
-OcrFreeResult(OCR_RESULT *result) {
-    if (result && result->textBlocksLength && result->textBlocks) {
-        for (uint64_t i = 0; i < result->textBlocksLength; i++) {
-            free(result->textBlocks[i].text);
+    json jBlocks = json::array();
+    for (const auto &tb : result.textBlocks) {
+        json jBlock;
+        // box points as [[x,y], ...]
+        json pts = json::array();
+        for (const auto &pt : tb.boxPoint) {
+            pts.push_back({pt.x, pt.y});
         }
-        free(result->textBlocks);
-        return TRUE;
+        jBlock["boxPoint"] = pts;
+        jBlock["boxScore"] = tb.boxScore;
+        jBlock["angleIndex"] = tb.angleIndex;
+        jBlock["angleScore"] = tb.angleScore;
+        jBlock["angleTime"] = tb.angleTime;
+        jBlock["text"] = tb.text;
+        jBlock["charScores"] = tb.charScores;
+        jBlock["crnnTime"] = tb.crnnTime;
+        jBlock["blockTime"] = tb.blockTime;
+        jBlocks.push_back(jBlock);
     }
-    return FALSE;
-}
+    j["textBlocks"] = jBlocks;
 
-_QM_OCR_API int OcrGetLen(OCR_HANDLE handle) {
-    OCR_OBJ *pOcrObj = (OCR_OBJ *) handle;
-    if (!pOcrObj)
-        return 0;
-    return pOcrObj->strRes.size() + 1;
+    std::string s = j.dump();
+    // Allocate C string for return; caller frees with FreeString
+    char *ret = (char *)malloc(s.size() + 1);
+    if (!ret) return nullptr;
+    memcpy(ret, s.c_str(), s.size() + 1);
+    return ret;
 }
 
 _QM_OCR_API void OcrDestroy(OCR_HANDLE handle) {
-    OCR_OBJ *pOcrObj = (OCR_OBJ *) handle;
-    if (pOcrObj)
-        delete pOcrObj;
+    OCR_OBJ *pOcrObj = (OCR_OBJ *)handle;
+    if (pOcrObj) delete pOcrObj;
+}
+
+_QM_OCR_API void FreeString(OCR_STRING str) {
+    if (str) free(str);
 }
 
 };

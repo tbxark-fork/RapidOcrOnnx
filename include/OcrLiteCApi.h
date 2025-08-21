@@ -17,6 +17,7 @@ extern "C"
 
 typedef void *OCR_HANDLE;
 typedef char OCR_BOOL;
+typedef char *OCR_STRING;
 
 #ifndef NULL
 #define NULL 0
@@ -25,23 +26,8 @@ typedef char OCR_BOOL;
 #define FALSE 0
 
 typedef struct __ocr_param {
-    int32_t padding;
-    int32_t maxSideLen;
-    float boxScoreThresh;
-    float boxThresh;
-    float unClipRatio;
-    int32_t doAngle; // 1 means do
-    int32_t mostAngle; // 1 means true
+
 } OCR_PARAM;
-
-typedef struct {
-    uint8_t *text;
-} TEXT_BLOCK;
-
-typedef struct {
-    TEXT_BLOCK *textBlocks;
-    uint64_t textBlocksLength;
-} OCR_RESULT;
 
 /*
 By default, nThreads should be the number of threads
@@ -49,15 +35,23 @@ By default, nThreads should be the number of threads
 _QM_OCR_API OCR_HANDLE
 OcrInit(const char *szDetModel, const char *szClsModel, const char *szRecModel, const char *szKeyPath, int nThreads);
 
-_QM_OCR_API OCR_BOOL
-OcrDetect(OCR_HANDLE handle, const char *imgPath, const char *imgName, OCR_PARAM *pParam, OCR_RESULT *ocrResult);
-
-_QM_OCR_API OCR_BOOL
-OcrFreeResult(OCR_RESULT *result);
-
-_QM_OCR_API int OcrGetLen(OCR_HANDLE handle);
+_QM_OCR_API OCR_STRING
+OcrDetect(
+    OCR_HANDLE handle,
+    const char *imgPath,
+    const char *imgName,
+    int32_t padding,
+    int32_t maxSideLen,
+    float boxScoreThresh;
+    float boxThresh,
+    float unClipRatio,
+    int32_t doAngle,
+    int32_t mostAngle,
+);
 
 _QM_OCR_API void OcrDestroy(OCR_HANDLE handle);
+
+__QM_OCR_API void FreeString(OCR_STRING str);
 
 };
 #endif //__OCR_LITE_C_API_H__
