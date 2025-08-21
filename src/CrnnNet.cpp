@@ -153,8 +153,10 @@ std::vector<TextLine> CrnnNet::getTextLines(std::vector<cv::Mat> &partImg, const
     for (int i = 0; i < size; ++i) {
         //OutPut DebugImg
         if (isOutputDebugImg) {
+            #ifndef __CLIB__
             std::string debugImgFile = getDebugImgFilePath(path, imgName, i, "-debug-");
             saveImg(partImg[i], debugImgFile.c_str());
+            #endif
         }
 
         //getTextLine

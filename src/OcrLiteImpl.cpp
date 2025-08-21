@@ -152,10 +152,12 @@ std::vector<cv::Mat> OcrLiteImpl::getPartImages(cv::Mat &src, std::vector<TextBo
         cv::Mat partImg = getRotateCropImage(src, textBoxes[i].boxPoint);
         partImages.emplace_back(partImg);
         //OutPut DebugImg
+        #ifndef __CLIB__
         if (isOutputPartImg) {
             std::string debugImgFile = getDebugImgFilePath(path, imgName, i, "-part-");
             saveImg(partImg, debugImgFile.c_str());
         }
+        #endif
     }
     return partImages;
 }
@@ -256,10 +258,12 @@ OcrResult OcrLiteImpl::detect(const char *path, const char *imgName,
     }
 
     //Save result.jpg
+    #ifndef __CLIB__
     if (isOutputResultImg) {
         std::string resultImgFile = getResultImgFilePath(path, imgName);
         imwrite(resultImgFile, textBoxImg);
     }
+    #endif
 
     std::string strRes;
     for (auto &textBlock: textBlocks) {

@@ -124,8 +124,10 @@ std::vector<Angle> AngleNet::getAngles(std::vector<cv::Mat> &partImgs, const cha
 
             //OutPut AngleImg
             if (isOutputAngleImg) {
-                std::string angleImgFile = getDebugImgFilePath(path, imgName, i, "-angle-");
-                saveImg(angleImg, angleImgFile.c_str());
+            #ifndef __CLIB__
+            std::string angleImgFile = getDebugImgFilePath(path, imgName, i, "-angle-");
+            saveImg(angleImg, angleImgFile.c_str());
+            #endif
             }
         }
     } else {

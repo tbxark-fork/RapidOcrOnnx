@@ -83,7 +83,9 @@ std::vector<Ort::AllocatedStringPtr> getInputNames(Ort::Session *session);
 
 std::vector<Ort::AllocatedStringPtr> getOutputNames(Ort::Session *session);
 
+#ifndef __CLIB__
 void saveImg(cv::Mat &img, const char *imgPath);
+#endif
 
 std::string getSrcImgFilePath(const char *path, const char *imgName);
 

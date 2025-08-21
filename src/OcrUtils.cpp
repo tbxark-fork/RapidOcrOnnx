@@ -1,5 +1,7 @@
 #include <opencv2/imgproc.hpp>
+#ifndef __CLIB__
 #include <opencv2/imgcodecs.hpp>
+#endif
 #include <numeric>
 #include "OcrUtils.h"
 #include "clipper.hpp"
@@ -373,9 +375,11 @@ std::vector<Ort::AllocatedStringPtr> getOutputNames(Ort::Session *session) {
     return outputNamesPtr;
 }
 
+#ifndef __CLIB__
 void saveImg(cv::Mat &img, const char *imgPath) {
     cv::imwrite(imgPath, img);
 }
+#endif
 
 std::string getSrcImgFilePath(const char *path, const char *imgName) {
     std::string filePath;
