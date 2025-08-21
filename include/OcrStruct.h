@@ -45,7 +45,6 @@ struct TextBlock {
 struct OcrResult {
     double dbNetTime;
     std::vector<TextBlock> textBlocks;
-    cv::Mat boxImg;
     double detectTime;
     std::string strRes;
 };

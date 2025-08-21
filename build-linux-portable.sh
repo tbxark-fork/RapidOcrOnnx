@@ -15,7 +15,7 @@ docker run --rm -v "${PWD}":/io ${IMAGE} bash -lc '
   # ensure cmake command available
   if ! command -v cmake >/dev/null 2>&1 && command -v cmake3 >/dev/null 2>&1; then ln -sf /usr/bin/cmake3 /usr/bin/cmake; fi
   cmake --version
-  cmake -S /io -B /io/build -DOCR_OUTPUT=CLIB -DCMAKE_BUILD_TYPE=Release && \
+  cmake -S /io -B /io/build -DCMAKE_BUILD_TYPE=Release && \
   cmake --build /io/build -j"$(nproc)" && \
   cmake --install /io/build --prefix /io/build/install && \
   echo "==== ldd of installed lib ====" && \

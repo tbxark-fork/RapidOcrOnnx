@@ -12,14 +12,12 @@ public:
 
     void setNumThread(int numOfThread);
 
-    void setGpuIndex(int gpuIndex);
 
     void initModel(const std::string &pathStr, const std::string &keysPath);
 
-    std::vector<TextLine> getTextLines(std::vector<cv::Mat> &partImg, const char *path, const char *imgName);
+    std::vector<TextLine> getTextLines(std::vector<cv::Mat> &partImg);
 
 private:
-    bool isOutputDebugImg = false;
     Ort::Session *session;
     Ort::Env env = Ort::Env(ORT_LOGGING_LEVEL_ERROR, "CrnnNet");
     Ort::SessionOptions sessionOptions = Ort::SessionOptions();

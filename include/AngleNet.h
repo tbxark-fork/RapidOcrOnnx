@@ -12,15 +12,12 @@ public:
 
     void setNumThread(int numOfThread);
 
-    void setGpuIndex(int gpuIndex);
 
     void initModel(const std::string &pathStr);
 
-    std::vector<Angle> getAngles(std::vector<cv::Mat> &partImgs, const char *path,
-                                 const char *imgName, bool doAngle, bool mostAngle);
+    std::vector<Angle> getAngles(std::vector<cv::Mat> &partImgs, bool doAngle, bool mostAngle);
 
 private:
-    bool isOutputAngleImg = false;
 
     Ort::Session *session;
     Ort::Env env = Ort::Env(ORT_LOGGING_LEVEL_ERROR, "AngleNet");

@@ -6,11 +6,11 @@ extern "C"
 {
 
 #ifdef WIN32
-#ifdef __CLIB__
-#define _QM_OCR_API __declspec(dllexport)
-#else
-#define _QM_OCR_API __declspec(dllimport)
-#endif
+#  ifdef OCRLIB_EXPORTS
+#    define _QM_OCR_API __declspec(dllexport)
+#  else
+#    define _QM_OCR_API __declspec(dllimport)
+#  endif
 #else
 #define _QM_OCR_API
 #endif

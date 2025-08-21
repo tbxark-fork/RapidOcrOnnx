@@ -1,9 +1,7 @@
-#include <opencv2/imgproc.hpp>
-#ifndef __CLIB__
-#include <opencv2/imgcodecs.hpp>
-#endif
-#include <numeric>
 #include "OcrUtils.h"
+#include <opencv2/imgproc.hpp>
+#include <algorithm>
+#include <cmath>
 #include "clipper.hpp"
 
 double getCurrentTime() {
@@ -72,33 +70,7 @@ std::vector<cv::Point2f> getBox(const cv::RotatedRect &rect) {
     return ret2;
 }
 
-int getThickness(cv::Mat &boxImg) {
-    int minSize = boxImg.cols > boxImg.rows ? boxImg.rows : boxImg.cols;
-    int thickness = minSize / 1000 + 2;
-    return thickness;
-}
 
-void drawTextBox(cv::Mat &boxImg, cv::RotatedRect &rect, int thickness) {
-    cv::Point2f vertices[4];
-    rect.points(vertices);
-    for (int i = 0; i < 4; i++)
-        cv::line(boxImg, vertices[i], vertices[(i + 1) % 4], cv::Scalar(0, 0, 255), thickness);
-    //cv::polylines(srcmat, textpoint, true, cv::Scalar(0, 255, 0), 2);
-}
-
-void drawTextBox(cv::Mat &boxImg, const std::vector<cv::Point> &box, int thickness) {
-    auto color = cv::Scalar(0, 0, 255);// B(0) G(0) R(255)
-    cv::line(boxImg, box[0], box[1], color, thickness);
-    cv::line(boxImg, box[1], box[2], color, thickness);
-    cv::line(boxImg, box[2], box[3], color, thickness);
-    cv::line(boxImg, box[3], box[0], color, thickness);
-}
-
-void drawTextBoxes(cv::Mat &boxImg, std::vector<TextBox> &textBoxes, int thickness) {
-    for (auto & textBox : textBoxes) {
-        drawTextBox(boxImg, textBox.boxPoint, thickness);
-    }
-}
 
 cv::Mat matRotateClockWise180(cv::Mat src) {
     flip(src, src, 0);
@@ -375,32 +347,8 @@ std::vector<Ort::AllocatedStringPtr> getOutputNames(Ort::Session *session) {
     return outputNamesPtr;
 }
 
-#ifndef __CLIB__
-void saveImg(cv::Mat &img, const char *imgPath) {
-    cv::imwrite(imgPath, img);
-}
-#endif
-
 std::string getSrcImgFilePath(const char *path, const char *imgName) {
     std::string filePath;
     filePath.append(path).append(imgName);
-    return filePath;
-}
-
-std::string getResultTxtFilePath(const char *path, const char *imgName) {
-    std::string filePath;
-    filePath.append(path).append(imgName).append("-result.txt");
-    return filePath;
-}
-
-std::string getResultImgFilePath(const char *path, const char *imgName) {
-    std::string filePath;
-    filePath.append(path).append(imgName).append("-result.jpg");
-    return filePath;
-}
-
-std::string getDebugImgFilePath(const char *path, const char *imgName, size_t i, const char *tag) {
-    std::string filePath;
-    filePath.append(path).append(imgName).append(tag).append(std::to_string(i)).append(".jpg");
     return filePath;
 }

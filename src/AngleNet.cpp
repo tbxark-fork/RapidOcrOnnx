@@ -2,38 +2,8 @@
 #include "OcrUtils.h"
 #include <numeric>
 
-#ifdef __DIRECTML__
-#include <onnxruntime/core/providers/dml/dml_provider_factory.h>
-#endif
 
-void AngleNet::setGpuIndex(int gpuIndex) {
-#ifdef __CUDA__
-    if (gpuIndex >= 0) {
-        OrtCUDAProviderOptions cuda_options;
-        cuda_options.device_id = gpuIndex;
-        cuda_options.arena_extend_strategy = 0;
-        cuda_options.gpu_mem_limit = 2ULL * 1024 * 1024 * 1024;
-        cuda_options.cudnn_conv_algo_search = OrtCudnnConvAlgoSearchDefault;
-        cuda_options.do_copy_in_default_stream = 1;
 
-        sessionOptions.AppendExecutionProvider_CUDA(cuda_options);
-        printf("cls try to use GPU%d\n", gpuIndex);
-    }
-    else {
-        printf("cls use CPU\n");
-    }
-#endif
-
-#ifdef __DIRECTML__
-    if (gpuIndex >= 0) {
-        OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, gpuIndex);
-        printf("cls try to use GPU%d\n", gpuIndex);
-    }
-    else {
-        printf("cls use CPU\n");
-    }
-#endif
-}
 
 AngleNet::~AngleNet() {
     delete session;
@@ -107,8 +77,7 @@ Angle AngleNet::getAngle(cv::Mat &src) {
     return scoreToAngle(outputData);
 }
 
-std::vector<Angle> AngleNet::getAngles(std::vector<cv::Mat> &partImgs, const char *path,
-                                       const char *imgName, bool doAngle, bool mostAngle) {
+std::vector<Angle> AngleNet::getAngles(std::vector<cv::Mat> &partImgs, bool doAngle, bool mostAngle) {
     size_t size = partImgs.size();
     std::vector<Angle> angles(size);
     if (doAngle) {
@@ -122,13 +91,7 @@ std::vector<Angle> AngleNet::getAngles(std::vector<cv::Mat> &partImgs, const cha
 
             angles[i] = angle;
 
-            //OutPut AngleImg
-            if (isOutputAngleImg) {
-            #ifndef __CLIB__
-            std::string angleImgFile = getDebugImgFilePath(path, imgName, i, "-angle-");
-            saveImg(angleImg, angleImgFile.c_str());
-            #endif
-            }
+            // no image saving
         }
     } else {
         for (size_t i = 0; i < size; ++i) {

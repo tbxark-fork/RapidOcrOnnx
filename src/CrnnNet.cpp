@@ -3,38 +3,7 @@
 #include <fstream>
 #include <numeric>
 
-#ifdef __DIRECTML__
-#include <onnxruntime/core/providers/dml/dml_provider_factory.h>
-#endif
-
-void CrnnNet::setGpuIndex(int gpuIndex) {
-#ifdef __CUDA__
-    if (gpuIndex >= 0) {
-        OrtCUDAProviderOptions cuda_options;
-        cuda_options.device_id = gpuIndex;
-        cuda_options.arena_extend_strategy = 0;
-        cuda_options.gpu_mem_limit = 2ULL * 1024 * 1024 * 1024;
-        cuda_options.cudnn_conv_algo_search = OrtCudnnConvAlgoSearchDefault;
-        cuda_options.do_copy_in_default_stream = 1;
-
-        sessionOptions.AppendExecutionProvider_CUDA(cuda_options);
-        printf("rec try to use GPU%d\n", gpuIndex);
-}
-    else {
-        printf("rec use CPU\n");
-    }
-#endif
-
-#ifdef __DIRECTML__
-    if (gpuIndex >= 0) {
-        OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, gpuIndex);
-        printf("rec try to use GPU%d\n", gpuIndex);
-    }
-    else {
-        printf("rec use CPU\n");
-    }
-#endif
-}
+// DirectML removed; CPU-only build
 
 CrnnNet::~CrnnNet() {
     delete session;
@@ -147,18 +116,10 @@ TextLine CrnnNet::getTextLine(const cv::Mat &src) {
     return scoreToTextLine(outputData, outputShape[1], outputShape[2]);
 }
 
-std::vector<TextLine> CrnnNet::getTextLines(std::vector<cv::Mat> &partImg, const char *path, const char *imgName) {
+std::vector<TextLine> CrnnNet::getTextLines(std::vector<cv::Mat> &partImg) {
     int size = partImg.size();
     std::vector<TextLine> textLines(size);
     for (int i = 0; i < size; ++i) {
-        //OutPut DebugImg
-        if (isOutputDebugImg) {
-            #ifndef __CLIB__
-            std::string debugImgFile = getDebugImgFilePath(path, imgName, i, "-debug-");
-            saveImg(partImg[i], debugImgFile.c_str());
-            #endif
-        }
-
         //getTextLine
         double startCrnnTime = getCurrentTime();
         TextLine textLine = getTextLine(partImg[i]);

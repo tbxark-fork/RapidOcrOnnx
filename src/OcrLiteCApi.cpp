@@ -1,5 +1,3 @@
-#ifdef __CLIB__
-
 #include "OcrLiteCApi.h"
 #include "OcrLiteImpl.h"
 #include "json.hpp"
@@ -108,4 +106,3 @@ _QM_OCR_API void FreeString(OCR_STRING str) {
 }
 
 };
-#endif
