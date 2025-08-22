@@ -25,6 +25,8 @@ typedef char *OCR_STRING;
 #define TRUE 1
 #define FALSE 0
 
+#define VERSION "1.2.3"
+
 /*
 By default, nThreads should be the number of threads
 */
