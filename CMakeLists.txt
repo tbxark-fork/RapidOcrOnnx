@@ -39,6 +39,12 @@ target_include_directories(RapidOcrOnnx PRIVATE
 target_compile_definitions(RapidOcrOnnx PRIVATE OCRLIB_EXPORTS)
 target_link_libraries(RapidOcrOnnx ${OnnxRuntime_LIBS} ${OpenCV_LIBS})
 
+# Linux static link libstdc++
+if (UNIX AND NOT APPLE)
+    target_link_options(RapidOcrOnnx PRIVATE -static-libstdc++ -static-libgcc)
+    target_link_libraries(RapidOcrOnnx dl pthread rt m)
+endif ()
+
 # install
 install(TARGETS RapidOcrOnnx EXPORT RapidOcrOnnx)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION include FILES_MATCHING PATTERN "OcrLiteCApi.h")
