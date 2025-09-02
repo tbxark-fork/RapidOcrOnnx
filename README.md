@@ -16,24 +16,17 @@ The key dependencies (OpenCV and ONNX Runtime) need to be downloaded from the fo
 
 - CMake 3.15+
 - C++ compiler with C++17 support
+- libstdc++-static (for static linking)
 - Platform-specific dependencies (see [third_party/README.md](third_party/README.md))
 
 ### Build Methods
 
-#### Method 1: Native Build (Unix/Linux/macOS)
+#### Native Build (Unix/Linux/macOS)
 
 Use the provided `build.sh` script for native compilation:
 
 ```bash
 ./build.sh
-```
-
-#### Method 2: Portable Linux Build (Docker)
-
-Use `build-linux-portable.sh` for cross-platform Linux builds using Docker:
-
-```bash
-./build-linux-portable.sh
 ```
 
 ### Build Output
