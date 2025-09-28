@@ -52,6 +52,36 @@ _QM_OCR_API void OcrDestroy(OCR_HANDLE handle);
 
 _QM_OCR_API void FreeString(OCR_STRING str);
 
+#ifdef OCR_ENABLE_SERVER
+// Server related APIs
+typedef void *OCR_SERVER_HANDLE;
+
+_QM_OCR_API OCR_SERVER_HANDLE
+OcrServerInit(const char *szDetModel, const char *szClsModel, const char *szRecModel, const char *szKeyPath, int nThreads);
+
+_QM_OCR_API int
+OcrServerRun(
+    OCR_SERVER_HANDLE handle,
+    const char* addr,
+    int port,
+    int threads,
+    int jsonDepth,
+    int32_t padding,
+    int32_t maxSideLen,
+    float boxScoreThresh,
+    float boxThresh,
+    float unClipRatio,
+    int32_t doAngle,
+    int32_t mostAngle
+);
+
+_QM_OCR_API void
+OcrServerStop(OCR_SERVER_HANDLE handle);
+
+_QM_OCR_API void
+OcrServerDestroy(OCR_SERVER_HANDLE handle);
+#endif // OCR_ENABLE_SERVER
+
 };
 #endif //__OCR_LITE_C_API_H__
 #endif //__cplusplus

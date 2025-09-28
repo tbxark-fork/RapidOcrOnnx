@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.17)
 project(RapidOcrOnnx)
 
+# Set C++ standard to C++17 to support onnxruntime features
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 add_definitions(-DUNICODE -D_UNICODE)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions("-Wall -g -O0")
@@ -22,6 +26,20 @@ find_package(OpenCV REQUIRED)
 message(STATUS "OpenCV_LIBS: ${OpenCV_LIBS}")
 message(STATUS "OpenCV_INCLUDE_DIRS: ${OpenCV_INCLUDE_DIRS}")
 
+# Server support (optional)
+option(OCR_ENABLE_SERVER "Enable OCR server functionality" OFF)
+if(OCR_ENABLE_SERVER)
+    message(STATUS "OCR Server support enabled")
+    # Find asio library using pkg-config
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(ASIO REQUIRED asio)
+    message(STATUS "ASIO_INCLUDE_DIRS: ${ASIO_INCLUDE_DIRS}")
+    message(STATUS "ASIO_CFLAGS: ${ASIO_CFLAGS}")
+    add_definitions(-DOCR_ENABLE_SERVER)
+else()
+    message(STATUS "OCR Server support disabled")
+endif()
+
 # Windows Link CRT (optional)
 if (OCR_BUILD_CRT STREQUAL "True")
     include(${CMAKE_CURRENT_SOURCE_DIR}/OcrCRTLinkage.cmake)
@@ -30,12 +48,28 @@ endif ()
 # sources
 file(GLOB OCR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB THIRD_PARTY_SRC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/*/*.cpp)
+
+# Conditionally exclude OcrServer.cpp if server support is disabled
+if(NOT OCR_ENABLE_SERVER)
+    list(REMOVE_ITEM OCR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/OcrServer.cpp)
+endif()
+
 add_library(RapidOcrOnnx SHARED ${OCR_SRC} ${THIRD_PARTY_SRC})
 target_include_directories(RapidOcrOnnx PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/clipper
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/nlohmann
 )
+
+# Conditionally add server-related includes and compile options
+if(OCR_ENABLE_SERVER)
+    target_include_directories(RapidOcrOnnx PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/crow
+        ${ASIO_INCLUDE_DIRS}
+    )
+    target_compile_options(RapidOcrOnnx PRIVATE ${ASIO_CFLAGS})
+endif()
+
 target_compile_definitions(RapidOcrOnnx PRIVATE OCRLIB_EXPORTS)
 target_link_libraries(RapidOcrOnnx ${OnnxRuntime_LIBS} ${OpenCV_LIBS})
 
