@@ -28,6 +28,7 @@ message(STATUS "OpenCV_INCLUDE_DIRS: ${OpenCV_INCLUDE_DIRS}")
 
 # Server support (optional)
 option(OCR_ENABLE_SERVER "Enable OCR server functionality" OFF)
+option(OCR_BUILD_SERVER_EXECUTABLE "Build OCR server executable" OFF)
 if(OCR_ENABLE_SERVER)
     message(STATUS "OCR Server support enabled")
     # Find asio library using pkg-config
@@ -48,6 +49,9 @@ endif ()
 # sources
 file(GLOB OCR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB THIRD_PARTY_SRC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/*/*.cpp)
+
+# Always exclude OcrServerMain.cpp from the library as it's only for the executable
+list(REMOVE_ITEM OCR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/OcrServerMain.cpp)
 
 # Conditionally exclude OcrServer.cpp if server support is disabled
 if(NOT OCR_ENABLE_SERVER)
@@ -80,5 +84,31 @@ if (UNIX AND NOT APPLE)
 endif ()
 
 # install
-install(TARGETS RapidOcrOnnx EXPORT RapidOcrOnnx)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION include FILES_MATCHING PATTERN "OcrLiteCApi.h")
+if(OCR_BUILD_SERVER_EXECUTABLE AND OCR_ENABLE_SERVER)
+    message(STATUS "Building OCR server executable")
+    add_executable(ocr-server ${CMAKE_CURRENT_SOURCE_DIR}/src/OcrServerMain.cpp)
+    target_include_directories(ocr-server PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cxxopts
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/crow
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/nlohmann
+        ${ASIO_INCLUDE_DIRS}
+    )
+    target_compile_options(ocr-server PRIVATE ${ASIO_CFLAGS})
+    target_link_libraries(ocr-server RapidOcrOnnx)
+    
+    # Set RPATH for macOS
+    if(APPLE)
+        set_target_properties(ocr-server PROPERTIES
+            INSTALL_RPATH "@loader_path/../lib"
+            BUILD_WITH_INSTALL_RPATH TRUE
+        )
+    endif()
+    
+    # Install the executable
+    install(TARGETS ocr-server DESTINATION bin)
+endif()
+
+# Always install the library and headers
+install(TARGETS RapidOcrOnnx EXPORT RapidOcrOnnx DESTINATION lib)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION include FILES_MATCHING PATTERN "*.h")
