@@ -5,7 +5,7 @@ go 1.24.7
 require (
 	github.com/gomlx/gomlx v0.23.1
 	github.com/gomlx/onnx-gomlx v0.2.5
-	gocv.io/x/gocv v0.42.0
+	gocv.io/x/gocv v0.35.0
 )
 
 require (
